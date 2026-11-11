@@ -31,29 +31,10 @@ Har HTTP Status Code ek **3-digit number** hota hai jiska pehla digit uski categ
 | Category | Meaning | Most Important Status Codes to Know for Interviews & Production |
 | --- | --- | --- |
 | **`1xx`** *(Informational)* | Request mil gayi hai, server abhi process kar raha hai (Rarely used directly). | `100 Continue`, `102 Processing` |
-| **`2xx`** *(Success)* | Request successfully samajh li gayi aur process ho gayi. | • **`200 OK`:** Standard success (e.g., `GET` ya `PUT` mein data mil gaya).<br>
-
-<br>• **`201 CREATED`:** `POST` request se DB mein naya resource ban gaya.<br>
-
-<br>• **`204 NO CONTENT`:** Action successful raha par response body mein kuch nahi bhej रहे (e.g., `DELETE`). |
-| **`3xx`** *(Redirection)* | Client ko resource tak pahunchne ke liye extra step (redirect) lena padega. | • **`301 Moved Permanently`:** Purani API URL hamesha ke liye badal gayi hai.<br>
-
-<br>• **`302 Found`:** URL temporarily doosri jagah shift hui hai (`Location` header ke sath).<br>
-
-<br>• **`304 Not Modified`:** Client ke paas jo cached data hai wahi use kar lo. |
-| **`4xx`** *(Client Error)* | **Client (Frontend/Postman) ki galti**—galat JSON, galat URL, ya bina login ke request. | • **`400 BAD REQUEST`:** Client ne galat syntax/payload bheja.<br>
-
-<br>• **`401 UNAUTHORIZED`:** Authentication fail (Login nahi kiya ya galat password).<br>
-
-<br>• **`403 FORBIDDEN`:** Login toh hai par is resource ki permission/role nahi hai.<br>
-
-<br>• **`404 NOT FOUND`:** Jo ID ya URL maanga gaya woh exist nahi karta. |
-| **`5xx`** *(Server Error)* | **Backend (Humare Spring Boot code) ki galti**—exception phat gaya ya DB down hai. | • **`500 INTERNAL SERVER ERROR`:** Code mein unhandled exception phat gaya.<br>
-
-<br>• **`502 BAD GATEWAY`:** Proxy/Gateway ko upstream server se invalid response mila.<br>
-
-<br>• **`503 SERVICE UNAVAILABLE`:** Server overloaded hai ya maintenance par hai. |
-
+| **`2xx`** *(Success)* | Request successfully samajh li gayi aur process ho gayi. | • **`200 OK`:** Standard success (e.g., `GET` ya `PUT` mein data mil gaya).<br>• **`201 CREATED`:** `POST` request se DB mein naya resource ban gaya.<br>• **`204 NO CONTENT`:** Action successful raha par response body mein kuch nahi bhej rahe (e.g., `DELETE`). |
+| **`3xx`** *(Redirection)* | Client ko resource tak pahunchne ke liye extra step (redirect) lena padega. | • **`301 Moved Permanently`:** Purani API URL hamesha ke liye badal gayi hai.<br>• **`302 Found`:** URL temporarily doosri jagah shift hui hai (`Location` header ke sath).<br>• **`304 Not Modified`:** Client ke paas jo cached data hai wahi use kar lo. |
+| **`4xx`** *(Client Error)* | **Client (Frontend/Postman) ki galti**—galat JSON, galat URL, ya bina login ke request. | • **`400 BAD REQUEST`:** Client ne galat syntax/payload bheja.<br>• **`401 UNAUTHORIZED`:** Authentication fail (Login nahi kiya ya galat password).<br>• **`403 FORBIDDEN`:** Login toh hai par is resource ki permission/role nahi hai.<br>• **`404 NOT FOUND`:** Jo ID ya URL maanga gaya woh exist nahi karta. |
+| **`5xx`** *(Server Error)* | **Backend (Humare Spring Boot code) ki galti**—exception phat gaya ya DB down hai. | • **`500 INTERNAL SERVER ERROR`:** Code mein unhandled exception phat gaya.<br>• **`502 BAD GATEWAY`:** Proxy/Gateway ko upstream server se invalid response mila.<br>• **`503 SERVICE UNAVAILABLE`:** Server overloaded hai ya maintenance par hai. |
 ---
 
 ### 3. What is `ResponseEntity<T>` and Why Do We Use Wildcard `ResponseEntity<?>`?
