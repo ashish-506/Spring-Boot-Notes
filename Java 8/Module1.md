@@ -481,5 +481,3 @@ public class Main {
 > *"Unlike an Anonymous Inner Class—which compiles into a separate `.class` file, can implement interfaces with multiple abstract methods, can hold state via instance variables, and binds `this` to its own instance—a Lambda Expression is a stateless function restricted strictly to Functional Interfaces, shares the lexical scope of the enclosing method where `this` refers to the outer class, and requires any captured local variables to be effectively final."*
 
 ---
-
-In 11 videos ke saare concepts, code patterns, aur interview articulations ek hi जगह compile ho gaye hain. Isko apni `.md` file mein save kar lo, aur jab agli batch ke links (Method References, `Predicate`, `Function`, `Consumer`, `Supplier`, `Streams`) ready hon toh bhejo!
