@@ -507,3 +507,94 @@ public void saveEntry(JournalEntry journalEntry, String userName) {
 * **Solution (Next Video Preview):** Dono operations **ek single atomic unit (All-or-Nothing)** ki tarah chalne chahiye—agar beech mein kuch phate toh pehla save bhi **Rollback** ho jaye! Iske liye agle video mein **`@Transactional`** aayega [[43:48](https://www.youtube.com/watch?v=Cx81dki8BTA&t=2628)], [[43:53](https://www.youtube.com/watch?v=Cx81dki8BTA&t=2633)].
 
 Jab `@Transactional` wala video dekh lo, toh uska link bhejo!
+
+
+> ye findByUserName naam ka ek function bna diya interface me to isko koi override krna chahiye tha lekin iss interface ki implementation class to runtime prr springboot hi bna de rha hai phir kon aur kaise override kr rha hia iss method ko aur mujhe agr apne methods banane ho to kya rules hote hai uske
+
+Tumhara dimaag ekdum sahi direction me chal raha hai! Core Java ka rule hai ki Interface me agar koi abstract method (`User findByUserName(String username);`) likha hai, toh jo class us interface ko `implements` karegi, use us method ki body (`@Override`) likhni hi padegi.
+
+Lekin yahan humने koi class nahi banayi, toh **Spring Boot ki runtime par banne wali class ko kaise pata chala ki `findByUserName` ke andar kya code likhna hai?**
+
+Iska jawab hai: **Query Method DSL (Method Name Parsing Engine)**. Parde ke peeche ka exact mechanism aur iske rules samjho:
+
+---
+
+### 1. Kon Aur Kaise Override Kar Raha Hai Is Method Ko? (Under-the-Hood Flow)
+
+Jab tumhari Spring Boot application start hoti hai, toh yeh **3 steps** chalte hain:
+
+1. **Dynamic Proxy Class Creation:**
+Spring Data MongoDB dekhta hai ki `UserRepository` ne `MongoRepository<User, ObjectId>` ko extend kiya hai. Spring runtime par memory ke andar ek hidden Proxy Class banata hai (jiska base implementation `SimpleMongoRepository` hota hai) aur use `@Autowired` ke zariye `UserService` me inject kar deta hai.
+
+
+2. **Method Name Tokenizer (Naam Todne Wala Parser):**
+Ab Spring dekhta hai ki `findAll()`, `save()`, `deleteById()` toh `MongoRepository` ke apne methods hain (unki body pehle se `SimpleMongoRepository` me likhi hui hai). Lekin **`findByUserName`** ek naya custom method hai!
+Spring is method ki body likhne ke liye **tumhare method ke naam ko English grammar ki tarah todta (parse karta) hai**:
+
+
+
+$$\underbrace{\text{findBy}}_{\text{Action: SELECT / db.users.find()}} + \underbrace{\text{UserName}}_{\text{Target Field in User.java: "userName"}}$$
+
+
+3. **Automatic Query Generation (Override at Runtime):**
+* Spring `MongoRepository<User, ObjectId>` ke pehle generic parameter (`User`) me jaakar check karta hai ki kya `User.java` class ke andar **`userName`** naam ki koi field hai?
+* Use `private String userName;` mil jaati hai!
+* Bas! Spring runtime par us method ko override karke uske andar automatically yeh MongoDB query daal deta hai:
+```javascript
+db.users.findOne({ "userName": username })
+
+```
+
+
+
+
+Yaani **Method ka Naam hi tumhara Code hai!**
+
+---
+
+### 2. Agar Tumne Naam Galat Likha Toh Kya Hoga? (Proof That Spring Parses the Name)
+
+Agar tum `UserRepository` me `findByUserName` ki jagah galti se **`findByAshish(String username)`** ya **`uchhalKoodKeUserLaao(String username)`** likh doge, toh **tumhara server start hi nahi hoga!**
+
+* Application start hote hi crash ho jayegi aur bolegi:
+**`No property 'ashish' found for type 'User'!`**
+* Kyun? Kyunki Spring ke parser ne `findBy` ke baad `Ashish` padha aur woh `User.java` POJO ke andar `private String ashish;` dhoondhne gaya, jo use nahi mila!
+
+(Note: Tumhare screenshot 1 me `findByUserName` ke neeche `UserName` par jo halki si wavy line dikh rahi hai, woh sirf IntelliJ ka English spell-checker hai kyunki English dictionary me 'username' ek word hota hai, par tumhari field `userName` camelCase me hai isliye `findByUserName` 100% sahi hai!)
+
+---
+
+### 3. Apne Custom Methods Banane Ke Rules (Query Method DSL Cheat Sheet)
+
+Jab bhi tumhe `Repository` interface me bina code likhe apna custom method banana ho, toh yeh **Strict Naming Formula** follow karna hota hai:
+
+$$\text{[Prefix / Action]} + \text{[Field Name in POJO (Capitalized)]} + \text{[Condition / Operator]}$$
+
+Maan lo `User` ya `JournalEntry` class me fields hain: `userName`, `password`, `title`, `content`, `date`, `age`. Toh tum yeh saare methods bana sakte ho:
+
+| Kya Karna Hai? | Repository Interface Me Method Ka Exact Naam | Spring Parde Ke Peeche Kya Query Chalayega? |
+| --- | --- | --- |
+| **Exact Match** | `User findByUserName(String username);`
+
+ | `{"userName": username}` |
+| **Delete by Field** | `void deleteByUserName(String username);` | Deletes document where `userName == username` |
+| **Exists Check** | `boolean existsByUserName(String username);` | Returns `true` if `userName` exists in DB |
+| **Count** | `long countByTitle(String title);` | Counts how many entries have this `title` |
+| **AND Condition** *(2 fields)* | `User findByUserNameAndPassword(String u, String p);` | `{"userName": u, "password": p}` |
+| **OR Condition** | `List<JournalEntry> findByTitleOrContent(String t, String c);` | `{$or: [{"title": t}, {"content": c}]}` |
+| **LIKE / Contains** *(Search)* | `List<JournalEntry> findByTitleContaining(String word);` | Finds entries where `title` contains `word` |
+| **Case-Insensitive** | `User findByUserNameIgnoreCase(String username);` | Matches `"ram"`, `"RAM"`, `"Ram"` |
+| **Greater / Less Than** | `List<User> findByAgeGreaterThan(int age);` | `{"age": {$gt: age}}` |
+| **Date Filtering** | `List<JournalEntry> findByDateAfter(LocalDateTime date);` | Finds entries created after given `date` |
+| **Sorting** | `List<JournalEntry> findByTitleOrderByDateDesc(String t);` | Matches `title` and sorts newest first |
+
+---
+
+### Golden Rule of Thumb (Kab Yeh Use Karein Aur Kab Nahi?)
+
+* **Rule 1 (CamelCase Match):** `findBy` ke baad jo naam likhoge, woh **exact tumhari Entity (`User.java` / `JournalEntry.java`) ke variable ka naam hona chahiye** (bas pehla letter Capital kar dena, jaise `userName` $\rightarrow$ `findByUserName`).
+
+
+* **Rule 2 (When Query Gets Too Complex):** Agar condition bohot lambi ho jaye (4-5 `And`/`Or`/Regex lagane padein), toh method ka naam ajeeb aur lamba ho jata hai—us case me hum method naming (Query Method DSL) chhod kar **`@Query` annotation** ya **`Criteria API` (`MongoTemplate`)** use karte hain (jo isi playlist me aage aayega).
+
+Ab ekdum clear ho gaya ki `UserRepository` me bina `@Override` likhe `findByUserName` kaise chal raha hai?
